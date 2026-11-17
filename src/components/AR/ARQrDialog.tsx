@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
-import { copyText } from '../../utils/url';
+import { copyText, PUBLIC_URL } from '../../utils/url';
 import { CloseIcon } from '../Icons';
 
 interface Props {
@@ -33,7 +33,7 @@ export function ARQrDialog({ url, title, colourName, onClose, onMessage }: Props
   }, [onClose]);
 
   async function copy() {
-    onMessage((await copyText(url)) ? 'Link copied.' : 'Couldn’t copy the link automatically.');
+    onMessage((await copyText(PUBLIC_URL)) ?'Link copied.' : 'Couldn’t copy the link automatically.');
   }
 
   return (

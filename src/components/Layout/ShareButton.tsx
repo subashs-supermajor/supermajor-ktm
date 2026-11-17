@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { track } from '../../services/analytics';
-import { copyText, embedLink, iframeCode, pageLink } from '../../utils/url';
+import { copyText, embedLink, iframeCode, PUBLIC_URL } from '../../utils/url';
 import { ShareIcon } from '../Icons';
 
 interface Props {
@@ -33,8 +33,8 @@ export function ShareButton({ title, variantId, onMessage }: Props) {
     {
       kind: 'link',
       label: 'Copy link',
-      detail: 'Opens the full page on this colour',
-      value: () => pageLink(variantId),
+      detail: 'Opens the full page',
+      value: () => PUBLIC_URL,
       done: 'Link copied.',
     },
     {
@@ -63,7 +63,7 @@ export function ShareButton({ title, variantId, onMessage }: Props) {
   async function nativeShare() {
     track('share_clicked', { kind: 'native' });
     try {
-      await navigator.share({ title, url: pageLink(variantId) });
+      await navigator.share({ title, url: PUBLIC_URL });
     } catch {
       // Closing the share sheet throws; nothing to report.
     }

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Axis, Variant } from '../../config/models/types';
-import { ARIcon, CloseIcon, DimensionsIcon } from '../Icons';
+import { ARIcon, CloseIcon } from '../Icons';
 
 // Registers the <model-viewer> custom element globally.
 import '@google/model-viewer';
@@ -15,63 +15,9 @@ interface Props {
   onSelectVariant?: (variantId: string) => void;
 }
 
-type Vec = { x: number; y: number; z: number };
-
 interface MVElement extends HTMLElement {
   canActivateAR: boolean;
   activateAR(): Promise<void>;
-  getDimensions(): Vec;
-  getBoundingBoxCenter(): Vec;
-  queryHotspot(name: string): { canvasPosition: Vec; facingCamera: boolean } | null;
-}
-
-interface Measure {
-  key: 'length' | 'height' | 'width';
-  label: string;
-  value: number;
-  from: Vec;
-  to: Vec;
-}
-
-const fmt = (v: Vec) => `${v.x}m ${v.y}m ${v.z}m`;
-const mid = (a: Vec, b: Vec): Vec => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, z: (a.z + b.z) / 2 });
-const fmtDim = (metres: number) => {
-  const cm = Math.round(metres * 100);
-  const totalIn = metres / 0.0254;
-  const ft = Math.floor(totalIn / 12);
-  const inch = Math.round(totalIn % 12);
-  const ftPart = ft > 0 ? `${ft}′` : '';
-  const inPart = inch > 0 || ft === 0 ? `${inch}″` : '';
-  return `${cm} cm / ${ftPart}${inPart}`;
-};
-
-/**
- * Three edges of the bounding box meeting at one bottom corner on the side the
- * camera opens on: length along the nose axis, width across, height up.
- */
-function measuresFor(size: Vec, centre: Vec, frontAxis: Axis): Measure[] {
-  if (!size || !centre) return [];
-  const lengthOnZ = frontAxis.endsWith('z');
-  const sx = typeof size.x === 'number' && Number.isFinite(size.x) ? size.x : 0.8;
-  const sy = typeof size.y === 'number' && Number.isFinite(size.y) ? size.y : 1.1;
-  const sz = typeof size.z === 'number' && Number.isFinite(size.z) ? size.z : 2.0;
-  const safeSize = { x: sx, y: sy, z: sz };
-  const cx = typeof centre.x === 'number' && Number.isFinite(centre.x) ? centre.x : 0;
-  const cy = typeof centre.y === 'number' && Number.isFinite(centre.y) ? centre.y : 0.5;
-  const cz = typeof centre.z === 'number' && Number.isFinite(centre.z) ? centre.z : 0;
-  const safeCentre = { x: cx, y: cy, z: cz };
-
-  const half = { x: safeSize.x / 2, y: safeSize.y / 2, z: safeSize.z / 2 };
-  const corner: Vec = { x: safeCentre.x + half.x, y: safeCentre.y - half.y, z: safeCentre.z + half.z };
-  const along = (axis: 'x' | 'y' | 'z'): Vec => ({ ...corner, [axis]: safeCentre[axis] - half[axis] });
-  const up: Vec = { ...corner, y: safeCentre.y + half.y };
-  const lenAxis = lengthOnZ ? 'z' : 'x';
-  const widAxis = lengthOnZ ? 'x' : 'z';
-  return [
-    { key: 'length', label: 'Length', value: safeSize[lenAxis], from: along(lenAxis), to: corner },
-    { key: 'height', label: 'Height', value: safeSize.y, from: corner, to: up },
-    { key: 'width', label: 'Width', value: safeSize[widAxis], from: along(widAxis), to: corner },
-  ];
 }
 
 function getModelViewerScale(el: HTMLElement | null): number {
@@ -106,12 +52,9 @@ export function ModelViewerAR({
   onSelectVariant,
 }: Props) {
   const mvRef = useRef<HTMLElement>(null);
-  const linesRef = useRef<SVGSVGElement>(null);
   const [selectedVariantId, setSelectedVariantId] = useState(variantId);
   const [progress, setProgress] = useState(0);
   const [loaded, setLoaded] = useState(false);
-  const [measures, setMeasures] = useState<Measure[] | null>(null);
-  const [showDims, setShowDims] = useState(false);
   const [arAvailable, setArAvailable] = useState(false);
   const [scalePercent, setScalePercent] = useState(100);
   const [arPhase, setArPhase] = useState<'idle' | 'scanning' | 'placed'>('idle');
@@ -183,23 +126,9 @@ export function ModelViewerAR({
       setProgress(Math.round(p * 100));
     }
 
-    function calculateMeasures() {
-      if (!mv) return;
-      try {
-        const dims = mv.getDimensions?.();
-        const center = mv.getBoundingBoxCenter?.();
-        if (dims && center) {
-          setMeasures(measuresFor(dims, center, frontAxis));
-        }
-      } catch (err) {
-        console.warn('Could not calculate AR measures:', err);
-      }
-    }
-
     function onLoad() {
       setLoaded(true);
       setArAvailable(Boolean(mv!.canActivateAR));
-      calculateMeasures();
     }
 
     function onArStatus(e: Event) {
@@ -213,16 +142,14 @@ export function ModelViewerAR({
     setProgress(0);
     mv.addEventListener('progress', onProgress);
     mv.addEventListener('load', onLoad);
-    mv.addEventListener('camera-change', calculateMeasures);
     mv.addEventListener('ar-status', onArStatus);
 
     return () => {
       mv.removeEventListener('progress', onProgress);
       mv.removeEventListener('load', onLoad);
-      mv.removeEventListener('camera-change', calculateMeasures);
       mv.removeEventListener('ar-status', onArStatus);
     };
-  }, [frontAxis, absGlb]);
+  }, [absGlb]);
 
   // Pinch-scaling in WebXR fires no DOM events, so read the scale every frame while AR is open.
   useEffect(() => {
@@ -238,37 +165,6 @@ export function ModelViewerAR({
     tick();
     return () => cancelAnimationFrame(raf);
   }, [arPhase]);
-
-  // Guide lines follow the hotspot ends every time the camera (or AR view) moves.
-  useEffect(() => {
-    const mv = mvRef.current as MVElement | null;
-    const svg = linesRef.current;
-    if (!mv || !svg || !measures || !showDims) return;
-
-    const draw = () => {
-      for (const m of measures) {
-        const line = svg.querySelector<SVGLineElement>(`[data-line="${m.key}"]`);
-        const a = mv.queryHotspot(`hotspot-${m.key}-a`);
-        const b = mv.queryHotspot(`hotspot-${m.key}-b`);
-        if (!line || !a || !b) continue;
-        line.setAttribute('x1', String(a.canvasPosition.x));
-        line.setAttribute('y1', String(a.canvasPosition.y));
-        line.setAttribute('x2', String(b.canvasPosition.x));
-        line.setAttribute('y2', String(b.canvasPosition.y));
-      }
-    };
-
-    const raf = requestAnimationFrame(draw);
-    mv.addEventListener('camera-change', draw);
-    mv.addEventListener('ar-status', draw);
-    window.addEventListener('resize', draw);
-    return () => {
-      cancelAnimationFrame(raf);
-      mv.removeEventListener('camera-change', draw);
-      mv.removeEventListener('ar-status', draw);
-      window.removeEventListener('resize', draw);
-    };
-  }, [measures, showDims]);
 
   function onBackdrop(e: React.MouseEvent<HTMLDivElement>) {
     if (e.target === e.currentTarget) onClose();
@@ -306,7 +202,7 @@ export function ModelViewerAR({
             ar-usdz-max-texture-size="1024"
             camera-controls=""
             camera-orbit={orbit}
-            auto-rotate={showDims ? undefined : ''}
+            auto-rotate=""
             shadow-intensity="1"
             environment-image="neutral"
             exposure="1.5"
@@ -314,7 +210,6 @@ export function ModelViewerAR({
             loading="eager"
             reveal="auto"
             class="ar-viewer"
-            data-dims={showDims ? 'on' : 'off'}
           >
             {/* Surface scanning guidance — shown during WebXR before model is placed */}
             {arPhase === 'scanning' && (
@@ -330,68 +225,9 @@ export function ModelViewerAR({
             )}
 
             {/* Slotted WebXR controls for Android WebXR camera overlay */}
-            <div className="ar-scale-badge ar-webxr-only interactive" role="status" onClick={resetScale}>
-              <span className="ar-scale-badge__lbl">Size</span>
-              <span className="ar-scale-badge__val">{scalePercent}%</span>
+            <div className="ar-xr-scale ar-webxr-only interactive" role="status" onClick={resetScale}>
+              {scalePercent}%
             </div>
-
-            {measures && (
-              <button
-                type="button"
-                className="ar-dims-toggle ar-webxr-only"
-                aria-pressed={showDims}
-                onClick={() => {
-                  setShowDims((v) => !v);
-                }}
-              >
-                <DimensionsIcon />
-              </button>
-            )}
-
-            {variants && variants.length > 1 && (
-              <div className="ar-variant-pill ar-webxr-only" role="radiogroup" aria-label="Select colour">
-                <span className="ar-variant-pill__name">{currentVariant?.name ?? 'White'}</span>
-                <div className="ar-variant-pill__dots">
-                  {variants.map((v) => {
-                    const isSelected = v.id === selectedVariantId;
-                    const solidColor =
-                      v.id === 'variant-white' || v.name.toLowerCase().includes('white')
-                        ? '#FFFFFF'
-                        : v.id === 'variant-orange' || v.name.toLowerCase().includes('orange')
-                          ? '#E8521C'
-                          : v.id === 'variant-red' || v.name.toLowerCase().includes('red')
-                            ? '#C01820'
-                            : v.swatch[0];
-
-                    return (
-                      <button
-                        key={v.id}
-                        type="button"
-                        role="radio"
-                        aria-checked={isSelected}
-                        aria-label={v.name}
-                        className="ar-variant-pill__dot"
-                        data-active={isSelected ? 'true' : 'false'}
-                        style={{ backgroundColor: solidColor }}
-                        onClick={() => handleVariantChange(v.id)}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {measures?.map((m) => [
-              <span key={`${m.key}-a`} slot={`hotspot-${m.key}-a`} data-position={fmt(m.from)} className="ar-dim-end" />,
-              <span key={`${m.key}-b`} slot={`hotspot-${m.key}-b`} data-position={fmt(m.to)} className="ar-dim-end" />,
-              <span key={m.key} slot={`hotspot-${m.key}`} data-position={fmt(mid(m.from, m.to))} className="ar-dim-label">
-                <span className="ar-dim-label__name">{m.label}</span> {fmtDim(m.value)}
-              </span>,
-            ])}
-
-            <svg ref={linesRef} className="ar-dim-lines" aria-hidden="true">
-              {measures?.map((m) => <line key={m.key} data-line={m.key} />)}
-            </svg>
 
             {/* Replaces model-viewer's own floating AR button */}
             <span slot="ar-button" hidden />
@@ -463,18 +299,6 @@ export function ModelViewerAR({
             </span>
           </button>
 
-          {showDims && measures && (
-            <p className="ar-dims-summary">
-              {measures.map((m) => (
-                <span key={m.key}>
-                  {m.label} <b>{fmtDim(m.value)}</b>
-                </span>
-              ))}
-              <span>
-                Scale <b>{scalePercent} %</b>
-              </span>
-            </p>
-          )}
           <p className="ar-overlay__hint">
             {!loaded
               ? 'Getting AR ready…'

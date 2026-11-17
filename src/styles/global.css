@@ -1484,14 +1484,23 @@ kbd {
   display: flex;
 }
 
-.ar-viewer .ar-scale-badge.ar-webxr-only {
-  top: calc(env(safe-area-inset-top, 0px) + 18px);
-  padding: 7px 18px;
-  font-size: 16px;
-}
-
-.ar-viewer .ar-scale-badge.ar-webxr-only .ar-scale-badge__val {
-  font-size: 16px;
+/* In-camera size readout: plain white text; the shadow keeps it legible over bright rooms. */
+.ar-xr-scale {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 22px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  color: #fff;
+  background: transparent;
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  user-select: none;
+  cursor: pointer;
 }
 
 /* Surface detection guidance overlay (shown in WebXR camera view) */
@@ -1633,40 +1642,6 @@ kbd {
   color: var(--c-text-2);
 }
 
-.ar-dims-toggle {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
-  z-index: 10;
-  width: 42px;
-  height: 42px;
-  display: grid;
-  place-items: center;
-  padding: 0;
-  border: 1px solid var(--c-line-strong);
-  background: rgba(17, 17, 17, 0.88);
-  color: var(--c-text);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  cursor: pointer;
-  transform: translateZ(10px);
-  -webkit-transform: translateZ(10px);
-  transition:
-    background-color 0.15s,
-    border-color 0.15s,
-    color 0.15s;
-}
-
-.ar-dims-toggle:hover {
-  border-color: var(--c-text-2);
-}
-
-.ar-dims-toggle[aria-pressed='true'] {
-  border-color: var(--c-accent);
-  background: var(--c-accent);
-  color: #111;
-}
-
 .ar-scale-badge {
   position: absolute;
   top: 12px;
@@ -1770,67 +1745,6 @@ kbd {
 
 .ar-variant-pill__dot:focus-visible {
   outline: none;
-}
-
-.ar-dim-end {
-  width: 1px;
-  height: 1px;
-  pointer-events: none;
-  opacity: 0;
-}
-
-.ar-dim-label {
-  padding: 4px 8px 3px;
-  border: 1px solid var(--c-accent);
-  background: rgba(17, 17, 17, 0.9);
-  color: var(--c-text);
-  font-family: var(--f-display);
-  font-weight: 600;
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
-  pointer-events: none;
-  transition: opacity 0.2s;
-}
-
-.ar-dim-label__name {
-  color: var(--c-accent);
-  text-transform: uppercase;
-}
-
-.ar-dim-lines {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  overflow: visible;
-}
-
-.ar-dim-lines line {
-  stroke: var(--c-accent);
-  stroke-width: 2;
-  stroke-dasharray: 6 4;
-}
-
-.ar-viewer[data-dims='off'] .ar-dim-label,
-.ar-viewer[data-dims='off'] .ar-dim-lines {
-  display: none;
-}
-
-.ar-dims-summary {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px 16px;
-  margin-bottom: 8px;
-  font-size: 13px;
-  color: var(--c-text-2);
-}
-
-.ar-dims-summary b {
-  color: var(--c-text);
-  font-weight: 600;
 }
 
 /* QR hand-off dialog (desktop) */

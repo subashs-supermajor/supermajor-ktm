@@ -26,7 +26,9 @@ export function writeVariantToUrl(id: string) {
   window.history.replaceState(null, '', url);
 }
 
-const IS_LOCAL = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname);
+export const PUBLIC_URL = 'https://vida-3d.softsuaveai.space/';
+
+const IS_LOCAL =/^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname);
 
 /** A phone can't open "localhost", so in local testing shared links use the machine's LAN address. */
 function shareOrigin() {
