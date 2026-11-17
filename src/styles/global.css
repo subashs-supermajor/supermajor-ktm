@@ -1440,7 +1440,7 @@ kbd {
 }
 
 /* The preview shows a still image; model-viewer stays mounted (invisible) so AR can launch. */
-.ar-viewer-wrap > .ar-viewer:not(:fullscreen) {
+.ar-viewer-wrap > .ar-viewer:not(:fullscreen):not([ar-status='session-started']):not([ar-status='object-placed']) {
   position: absolute;
   inset: 0;
   height: auto;
@@ -1477,8 +1477,21 @@ kbd {
   display: none;
 }
 
-.ar-viewer:fullscreen .ar-webxr-only {
+/* model-viewer's WebXR DOM overlay never makes the host :fullscreen; it sets ar-status instead. */
+.ar-viewer:fullscreen .ar-webxr-only,
+.ar-viewer[ar-status='session-started'] .ar-webxr-only,
+.ar-viewer[ar-status='object-placed'] .ar-webxr-only {
   display: flex;
+}
+
+.ar-viewer .ar-scale-badge.ar-webxr-only {
+  top: calc(env(safe-area-inset-top, 0px) + 18px);
+  padding: 7px 18px;
+  font-size: 16px;
+}
+
+.ar-viewer .ar-scale-badge.ar-webxr-only .ar-scale-badge__val {
+  font-size: 16px;
 }
 
 /* Surface detection guidance overlay (shown in WebXR camera view) */

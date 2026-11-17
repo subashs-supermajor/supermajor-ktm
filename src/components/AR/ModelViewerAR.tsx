@@ -135,6 +135,14 @@ export function ModelViewerAR({
     const mv = mvRef.current as any;
     if (!mv) return;
     try {
+      for (let proto = mv; proto; proto = Object.getPrototypeOf(proto)) {
+        const sym = Object.getOwnPropertySymbols(proto).find((s) => s.description === 'renderer');
+        if (sym) {
+          const ar = mv[sym]?.arRenderer;
+          if (ar && 'goalScale' in ar) ar.goalScale = 1;
+          break;
+        }
+      }
       const syms = Object.getOwnPropertySymbols(mv);
       for (let i = 0; i < syms.length; i++) {
         try {
@@ -216,24 +224,20 @@ export function ModelViewerAR({
     };
   }, [frontAxis, absGlb]);
 
-  // Track live model scale in percentage (especially during AR scaling).
+  // Pinch-scaling in WebXR fires no DOM events, so read the scale every frame while AR is open.
   useEffect(() => {
     const mv = mvRef.current;
-    if (!mv) return;
+    if (!mv || arPhase === 'idle') return;
 
-    const checkScale = () => {
-      const s = getModelViewerScale(mv);
-      setScalePercent(Math.round(s * 100));
+    let raf = 0;
+    const tick = () => {
+      const pct = Math.round(getModelViewerScale(mv) * 100);
+      setScalePercent((prev) => (prev === pct ? prev : pct));
+      raf = requestAnimationFrame(tick);
     };
-
-    mv.addEventListener('camera-change', checkScale);
-    mv.addEventListener('ar-status', checkScale);
-
-    return () => {
-      mv.removeEventListener('camera-change', checkScale);
-      mv.removeEventListener('ar-status', checkScale);
-    };
-  }, []);
+    tick();
+    return () => cancelAnimationFrame(raf);
+  }, [arPhase]);
 
   // Guide lines follow the hotspot ends every time the camera (or AR view) moves.
   useEffect(() => {
@@ -326,8 +330,9 @@ export function ModelViewerAR({
             )}
 
             {/* Slotted WebXR controls for Android WebXR camera overlay */}
-            <div className="ar-scale-badge ar-webxr-only" role="status" onClick={resetScale}>
-              <span className="ar-scale-badge__val">{scalePercent} %</span>
+            <div className="ar-scale-badge ar-webxr-only interactive" role="status" onClick={resetScale}>
+              <span className="ar-scale-badge__lbl">Size</span>
+              <span className="ar-scale-badge__val">{scalePercent}%</span>
             </div>
 
             {measures && (
