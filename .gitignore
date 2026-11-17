@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.zip
+.run/
+originals/
+__pycache__/
+*.pyc
+*.log

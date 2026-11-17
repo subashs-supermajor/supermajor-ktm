@@ -1,0 +1,88 @@
+{
+  "modelId": "ktm-390-duke",
+  "displayName": "VIDA V2 Plus",
+  "shortName": "V2 Plus",
+  "market": "India",
+  "modelYear": "TO_BE_CONFIRMED",
+  "frontAxis": "+z",
+  "asset": {
+    "glb": "/assets/models/ktm-390-duke/Scooter.glb",
+    "usdz": "/assets/models/ktm-390-duke/Scooter-White.usdz"
+  },
+  "paintSlots": [
+    {
+      "id": "primary",
+      "label": "Main body panels",
+      "match": ["paint_primary", "body_panel", "bodypanel", "tank", "fender"]
+    },
+    {
+      "id": "secondary",
+      "label": "Secondary panels and trim",
+      "match": ["paint_secondary", "trim", "accent"]
+    }
+  ],
+  "defaultVariantId": "variant-white",
+  "variants": [
+    {
+      "id": "variant-white",
+      "name": "White",
+      "swatch": ["#FFFFFF", "#FFFFFF"],
+      "model": "/assets/models/ktm-390-duke/Scooter.glb",
+      "usdz": "/assets/models/ktm-390-duke/Scooter-White.usdz",
+      "approvalStatus": "placeholder"
+    },
+    {
+      "id": "variant-orange",
+      "name": "Orange",
+      "swatch": ["#E8521C", "#E8521C"],
+      "model": "/assets/models/ktm-390-duke/Scooter-Orange.glb",
+      "usdz": "/assets/models/ktm-390-duke/Scooter-Orange.usdz",
+      "approvalStatus": "placeholder"
+    },
+    {
+      "id": "variant-red",
+      "name": "Red",
+      "swatch": ["#B81820", "#B81820"],
+      "model": "/assets/models/ktm-390-duke/Scooter-Red.glb",
+      "usdz": "/assets/models/ktm-390-duke/Scooter-Red.usdz",
+      "approvalStatus": "placeholder"
+    }
+  ],
+  "hotspots": [
+    {
+      "id": "engine",
+      "title": "Engine",
+      "description": "Approved product description to be supplied by KTM.",
+      "position": { "along": 0.5, "height": 0.32, "side": 0.55 },
+      "status": "placeholder"
+    },
+    {
+      "id": "front-suspension",
+      "title": "Front suspension",
+      "description": "Approved product description to be supplied by KTM.",
+      "position": { "along": 0.84, "height": 0.55, "side": 0.4 },
+      "status": "placeholder"
+    },
+    {
+      "id": "braking-system",
+      "title": "Braking system",
+      "description": "Approved product description to be supplied by KTM.",
+      "position": { "along": 0.88, "height": 0.26, "side": 0.6 },
+      "status": "placeholder"
+    },
+    {
+      "id": "tft-display",
+      "title": "TFT display",
+      "description": "Approved product description to be supplied by KTM.",
+      "position": { "along": 0.76, "height": 0.88, "side": 0 },
+      "status": "placeholder"
+    },
+    {
+      "id": "wheels-tyres",
+      "title": "Wheels and tyres",
+      "description": "Approved product description to be supplied by KTM.",
+      "position": { "along": 0.14, "height": 0.3, "side": -0.5 },
+      "status": "placeholder"
+    }
+  ]
+}

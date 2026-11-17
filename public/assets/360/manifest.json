@@ -1,0 +1,12 @@
+{
+  "frames": 72,
+  "width": 1600,
+  "height": 900,
+  "ext": "webp",
+  "rendered": "2026-11-17T10:17:18.083Z",
+  "variants": {
+    "variant-white": "/assets/360/variant-white/",
+    "variant-orange": "/assets/360/variant-orange/",
+    "variant-red": "/assets/360/variant-red/"
+  }
+}

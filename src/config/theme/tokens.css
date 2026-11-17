@@ -1,0 +1,25 @@
+/*
+  Prototype design tokens. These are not certified KTM brand values:
+  replace them with the client's brand guidelines before production.
+*/
+:root {
+  --c-accent: #ff6600;
+  --c-accent-soft: rgba(255, 102, 0, 0.14);
+  --c-bg: #111111;
+  --c-surface: #292929;
+  --c-surface-2: #1b1b1b;
+  --c-text: #ffffff;
+  --c-text-2: #b2b2b2;
+  --c-text-3: #858585;
+  --c-line: rgba(255, 255, 255, 0.1);
+  --c-line-strong: rgba(255, 255, 255, 0.22);
+
+  --f-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --f-ui: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --gutter: clamp(16px, 3vw, 40px);
+  --topbar-h: 64px;
+  --control: 44px;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
