@@ -114,6 +114,7 @@ export function ModelViewerAR({
   const [showDims, setShowDims] = useState(false);
   const [arAvailable, setArAvailable] = useState(false);
   const [scalePercent, setScalePercent] = useState(100);
+  const [arPhase, setArPhase] = useState<'idle' | 'scanning' | 'placed'>('idle');
 
   useEffect(() => {
     setSelectedVariantId(variantId);
@@ -193,16 +194,25 @@ export function ModelViewerAR({
       calculateMeasures();
     }
 
+    function onArStatus(e: Event) {
+      const status = (e as CustomEvent<{ status: string }>).detail?.status;
+      if (status === 'session-started') setArPhase('scanning');
+      else if (status === 'object-placed') setArPhase('placed');
+      else if (status === 'not-presenting') setArPhase('idle');
+    }
+
     setLoaded(false);
     setProgress(0);
     mv.addEventListener('progress', onProgress);
     mv.addEventListener('load', onLoad);
     mv.addEventListener('camera-change', calculateMeasures);
+    mv.addEventListener('ar-status', onArStatus);
 
     return () => {
       mv.removeEventListener('progress', onProgress);
       mv.removeEventListener('load', onLoad);
       mv.removeEventListener('camera-change', calculateMeasures);
+      mv.removeEventListener('ar-status', onArStatus);
     };
   }, [frontAxis, absGlb]);
 
@@ -302,6 +312,19 @@ export function ModelViewerAR({
             class="ar-viewer"
             data-dims={showDims ? 'on' : 'off'}
           >
+            {/* Surface scanning guidance — shown during WebXR before model is placed */}
+            {arPhase === 'scanning' && (
+              <div className="ar-surface-hint ar-webxr-only" aria-live="polite">
+                <div className="ar-surface-hint__ring" />
+                <p className="ar-surface-hint__text">Move camera slowly over a flat surface</p>
+              </div>
+            )}
+            {arPhase === 'placed' && (
+              <div className="ar-surface-hint ar-surface-hint--placed ar-webxr-only" aria-live="polite">
+                <p className="ar-surface-hint__text">Pinch to resize · Drag to move</p>
+              </div>
+            )}
+
             {/* Slotted WebXR controls for Android WebXR camera overlay */}
             <div className="ar-scale-badge ar-webxr-only" role="status" onClick={resetScale}>
               <span className="ar-scale-badge__val">{scalePercent} %</span>
@@ -381,7 +404,8 @@ export function ModelViewerAR({
               title="Model scale (click to reset to 100%)"
               onClick={resetScale}
             >
-              <span className="ar-scale-badge__val">{scalePercent} %</span>
+              <span className="ar-scale-badge__lbl">Size</span>
+              <span className="ar-scale-badge__val">{scalePercent}%</span>
             </div>
 
             {/* Color variant switching pill (bottom right) */}
