@@ -1,6 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Axis, Variant } from '../../config/models/types';
 import { ARIcon, CloseIcon } from '../Icons';
+import {
+  installSurfaceGate,
+  restoreModelVisibility,
+  type SurfaceIssue,
+  type SurfaceState,
+} from './arSurfaceGate';
+
+const SURFACE_TIPS: Record<SurfaceIssue, string> = {
+  tilted: 'Point at flat floor',
+  high: 'Point at the floor',
+  cramped: 'Need more open space',
+  far: 'Move a little closer',
+  close: 'Step back a little',
+};
 
 // Registers the <model-viewer> custom element globally.
 import '@google/model-viewer';
@@ -58,6 +72,10 @@ export function ModelViewerAR({
   const [arAvailable, setArAvailable] = useState(false);
   const [scalePercent, setScalePercent] = useState(100);
   const [arPhase, setArPhase] = useState<'idle' | 'scanning' | 'placed'>('idle');
+  const [surface, setSurface] = useState<SurfaceState>({ phase: 'scanning' });
+
+  // Hold the bike back in WebXR until a suitable floor is found.
+  useEffect(() => installSurfaceGate(mvRef.current, setSurface), []);
 
   useEffect(() => {
     setSelectedVariantId(variantId);
@@ -133,9 +151,14 @@ export function ModelViewerAR({
 
     function onArStatus(e: Event) {
       const status = (e as CustomEvent<{ status: string }>).detail?.status;
-      if (status === 'session-started') setArPhase('scanning');
-      else if (status === 'object-placed') setArPhase('placed');
-      else if (status === 'not-presenting') setArPhase('idle');
+      if (status === 'session-started') {
+        setSurface({ phase: 'scanning' });
+        setArPhase('scanning');
+      } else if (status === 'object-placed') setArPhase('placed');
+      else if (status === 'not-presenting') {
+        restoreModelVisibility(mv);
+        setArPhase('idle');
+      }
     }
 
     setLoaded(false);
@@ -212,10 +235,19 @@ export function ModelViewerAR({
             class="ar-viewer"
           >
             {/* Surface scanning guidance — shown during WebXR before model is placed */}
-            {arPhase === 'scanning' && (
+            {arPhase === 'scanning' && surface.phase === 'scanning' && (
               <div className="ar-surface-hint ar-webxr-only" aria-live="polite">
                 <div className="ar-surface-hint__ring" />
-                <p className="ar-surface-hint__text">Move camera slowly over a flat surface</p>
+                <p className="ar-surface-hint__text">Scanning floor… move phone slowly</p>
+              </div>
+            )}
+            {arPhase === 'scanning' && surface.phase === 'unsuitable' && (
+              <div className="ar-surface-hint ar-surface-hint--bad ar-webxr-only" role="alert">
+                <div className="ar-surface-hint__ring" />
+                <p className="ar-surface-hint__text">
+                  <strong>Can’t place here</strong>
+                  <span>{SURFACE_TIPS[surface.issue]}</span>
+                </p>
               </div>
             )}
             {arPhase === 'placed' && (

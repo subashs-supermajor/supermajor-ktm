@@ -1545,6 +1545,25 @@ kbd {
   white-space: nowrap;
 }
 
+/* Unsuitable surface: red ring + two-line message (title + short tip). */
+.ar-surface-hint--bad .ar-surface-hint__ring {
+  border-color: #ff5a4f;
+  animation: none;
+}
+
+.ar-surface-hint--bad .ar-surface-hint__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 18px;
+  border-radius: 14px;
+}
+
+.ar-surface-hint--bad .ar-surface-hint__text strong {
+  color: #ff8a80;
+  font-weight: 600;
+}
+
 .ar-surface-hint--placed {
   bottom: 160px;
   animation: ar-hint-fade 2.5s ease forwards;
