@@ -87,6 +87,45 @@ function studioTools(): Plugin {
   };
 }
 
+/**
+ * Vite's static server (sirv) sends an empty Content-Type for extensions it doesn't know.
+ * iOS Safari only opens AR Quick Look when a .usdz arrives as model/vnd.usdz+zip, so set the
+ * 3D model types explicitly — in dev and in `vite preview`, which serves the tunnelled site.
+ */
+const MODEL_TYPES: Record<string, string> = {
+  '.usdz': 'model/vnd.usdz+zip',
+  '.glb': 'model/gltf-binary',
+};
+
+function modelMimeTypes(): Plugin {
+  const middleware = (req: IncomingMessage, res: ServerResponse, next: () => void) => {
+    const path = (req.url ?? '').split('?')[0].toLowerCase();
+    const ext = Object.keys(MODEL_TYPES).find((e) => path.endsWith(e));
+    if (ext) {
+      const type = MODEL_TYPES[ext];
+      const writeHead = res.writeHead.bind(res) as (...args: any[]) => ServerResponse;
+      (res as any).writeHead = (status: number, ...rest: any[]) => {
+        const headers = rest.find((a) => a && typeof a === 'object');
+        if (headers) {
+          for (const key of Object.keys(headers)) if (key.toLowerCase() === 'content-type') delete headers[key];
+        }
+        res.setHeader('Content-Type', type);
+        return writeHead(status, ...rest);
+      };
+    }
+    next();
+  };
+  return {
+    name: 'model-mime-types',
+    configureServer(server) {
+      server.middlewares.use(middleware);
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(middleware);
+    },
+  };
+}
+
 /** This machine's Wi-Fi/LAN address, so a QR code shown on localhost can still be opened on a phone. */
 function lanOrigin(port: number): string {
   for (const list of Object.values(networkInterfaces())) {
@@ -98,7 +137,7 @@ function lanOrigin(port: number): string {
 }
 
 export default defineConfig(({ command }) => ({
-  plugins: [react(), studioTools()],
+  plugins: [react(), studioTools(), modelMimeTypes()],
   define: { __LAN_ORIGIN__: JSON.stringify(command === 'serve' ? lanOrigin(5173) : '') },
   // host: true exposes the dev server on the LAN so it can be opened on a phone.
   // Build output and zips are often locked by Windows tools while packaging; watching them crashes the server.
